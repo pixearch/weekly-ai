@@ -23,7 +23,7 @@ export async function GET() {
     `;
 
     return NextResponse.json({ ok: true, count: rows[0].count });
-  } catch (e: any) {
+  } catch (e: unknown) {
     return NextResponse.json(
       { ok: false, error: e.message },
       { status: 500 }
