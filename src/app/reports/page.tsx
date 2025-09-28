@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 type Report = {
   id: string;
@@ -19,48 +20,93 @@ type ApiResponse = {
 };
 
 export default function ReportsPage() {
-  const [data, setData] = useState<ApiResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [items, setItems] = useState<Report[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [limit, setLimit] = useState<number>(20);
+  const [offset, setOffset] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPage = async (nextOffset: number, isLoadMore = false) => {
+    try {
+      if (isLoadMore) setLoadingMore(true);
+      else setLoading(true);
+
+      const res = await fetch(`/api/reports?limit=${limit}&offset=${nextOffset}`, {
+        cache: 'no-store'
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json: ApiResponse = await res.json();
+
+      // de-dupe by id just in case
+      const merged = isLoadMore ? [...items, ...json.items] : json.items;
+      const dedupedMap = new Map(merged.map(r => [r.id, r]));
+      const deduped = Array.from(dedupedMap.values());
+
+      setItems(deduped);
+      setTotal(json.total);
+      setLimit(json.limit);
+      setOffset(json.offset + json.items.length);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load';
+      setError(msg);
+    } finally {
+      if (isLoadMore) setLoadingMore(false);
+      else setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const run = async () => {
-      try {
-        const res = await fetch('/api/reports', { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json: ApiResponse = await res.json();
-        setData(json);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Failed to load';
-        setError(msg);
-      } finally {
-        setLoading(false);
-      }
-    };
-    run();
+    fetchPage(0, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) return <div className="p-6">Loading…</div>;
   if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
 
+  const hasMore = items.length < total;
+
   return (
     <main className="mx-auto max-w-2xl p-6 space-y-6 bg-gray-900 text-white min-h-screen">
+      <nav>
+        <Link href="/" className="text-sm text-gray-400 hover:underline">← Home</Link>
+      </nav>
+
       <h1 className="text-3xl font-bold">Weekly Reports</h1>
-      {data && data.items.length === 0 ? (
-        <p>No reports yet.</p>
+
+      {items.length === 0 ? (
+        <p className="text-gray-400">No reports yet.</p>
       ) : (
-        <ul className="space-y-4">
-          {data?.items.map((r) => (
-            <li key={r.id} className="rounded-lg border border-gray-700 bg-gray-800 p-5 shadow">
-              <div className="text-sm text-gray-400">Week starting {r.week_start}</div>
-              <h2 className="text-xl font-semibold mt-1">{r.title}</h2>
-              <p className="mt-2 text-gray-200">{r.body}</p>
-              <div className="mt-3 text-xs text-gray-500">
-                Created {new Date(r.created_at).toLocaleString()}
+        <>
+          <ul className="space-y-4">
+            {items.map((r) => (
+              <li key={r.id} className="rounded-lg border border-gray-700 bg-gray-800 p-5 shadow">
+                <div className="text-sm text-gray-400">Week starting {r.week_start}</div>
+                <h2 className="text-xl font-semibold mt-1">{r.title}</h2>
+                <p className="mt-2 text-gray-200">{r.body}</p>
+                <div className="mt-3 text-xs text-gray-500">
+                  Created {new Date(r.created_at).toLocaleString()}
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {hasMore && (
+            <div className="pt-2">
+              <button
+                onClick={() => fetchPage(offset, true)}
+                disabled={loadingMore}
+                className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 hover:bg-gray-700 disabled:opacity-50"
+              >
+                {loadingMore ? 'Loading…' : 'Load more'}
+              </button>
+              <div className="mt-2 text-xs text-gray-500">
+                Showing {items.length} of {total}
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+        </>
       )}
     </main>
   );
