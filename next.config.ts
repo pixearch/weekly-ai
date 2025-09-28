@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+cat > next.config.ts <<'EOF'
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [
+      { source: '/', destination: '/reports', permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;
+EOF
+
