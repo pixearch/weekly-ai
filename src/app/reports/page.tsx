@@ -19,6 +19,12 @@ type ApiResponse = {
   items: Report[];
 };
 
+// Pretty-date helper
+const fmt = (s: string) => {
+  const d = s.includes('T') ? new Date(s) : new Date(`${s}T00:00:00Z`);
+  return isNaN(d.getTime()) ? s : d.toLocaleDateString();
+};
+
 export default function ReportsPage() {
   const [items, setItems] = useState<Report[]>([]);
   const [total, setTotal] = useState(0);
@@ -65,13 +71,13 @@ export default function ReportsPage() {
       <h1 className="text-3xl font-bold">Weekly Reports</h1>
 
       {items.length === 0 ? (
-        <p>No reports yet.</p>
+        <p className="text-gray-400">No reports yet.</p>
       ) : (
         <>
           <ul className="space-y-4">
             {items.map((r) => (
               <li key={r.id} className="rounded-lg border border-gray-700 bg-gray-800 p-5 shadow">
-                <div className="text-sm text-gray-400">Week starting {r.week_start}</div>
+                <div className="text-sm text-gray-400">Week starting {fmt(r.week_start)}</div>
                 <h2 className="text-xl font-semibold mt-1">{r.title}</h2>
                 <p className="mt-2 text-gray-200">{r.body}</p>
                 <div className="mt-3 text-xs text-gray-500">
