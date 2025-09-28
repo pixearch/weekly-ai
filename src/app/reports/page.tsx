@@ -30,8 +30,9 @@ export default function ReportsPage() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: ApiResponse = await res.json();
         setData(json);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to load';
+        setError(msg);
       } finally {
         setLoading(false);
       }
