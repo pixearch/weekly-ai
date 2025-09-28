@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 type Report = {
   id: string;
@@ -21,39 +21,28 @@ type ApiResponse = {
 
 export default function ReportsPage() {
   const [items, setItems] = useState<Report[]>([]);
-  const [total, setTotal] = useState<number>(0);
-  const [limit, setLimit] = useState<number>(20);
-  const [offset, setOffset] = useState<number>(0);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(20);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPage = async (nextOffset: number, isLoadMore = false) => {
+  const fetchPage = async (nextOffset: number, isMore = false) => {
     try {
-      if (isLoadMore) setLoadingMore(true);
-      else setLoading(true);
-
-      const res = await fetch(`/api/reports?limit=${limit}&offset=${nextOffset}`, {
-        cache: 'no-store'
-      });
+      isMore ? setLoadingMore(true) : setLoading(true);
+      const res = await fetch(`/api/reports?limit=${limit}&offset=${nextOffset}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: ApiResponse = await res.json();
 
-      // de-dupe by id just in case
-      const merged = isLoadMore ? [...items, ...json.items] : json.items;
-      const dedupedMap = new Map(merged.map(r => [r.id, r]));
-      const deduped = Array.from(dedupedMap.values());
-
-      setItems(deduped);
       setTotal(json.total);
       setLimit(json.limit);
       setOffset(json.offset + json.items.length);
+      setItems(isMore ? [...items, ...json.items] : json.items);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load';
-      setError(msg);
+      setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
-      if (isLoadMore) setLoadingMore(false);
-      else setLoading(false);
+      isMore ? setLoadingMore(false) : setLoading(false);
     }
   };
 
@@ -76,7 +65,7 @@ export default function ReportsPage() {
       <h1 className="text-3xl font-bold">Weekly Reports</h1>
 
       {items.length === 0 ? (
-        <p className="text-gray-400">No reports yet.</p>
+        <p>No reports yet.</p>
       ) : (
         <>
           <ul className="space-y-4">
