@@ -1,4 +1,4 @@
-mport { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 
 export const runtime = "nodejs";
