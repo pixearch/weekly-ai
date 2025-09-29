@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+mport { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 
 export const runtime = "nodejs";
@@ -9,11 +9,12 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
+// Correct, explicit signature for an App Router dynamic route:
 export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
-  const idNum = Number(params.id);
+  _req: NextRequest,
+  ctx: { params: { id: string } }
+): Promise<NextResponse> {
+  const idNum = Number(ctx.params.id);
   if (!Number.isInteger(idNum) || idNum <= 0) {
     return NextResponse.json({ ok: false, error: "bad id" }, { status: 400 });
   }
@@ -28,9 +29,7 @@ export async function GET(
       [idNum]
     );
 
-    if (rows.length === 0) {
-      return NextResponse.json(null, { status: 404 });
-    }
+    if (rows.length === 0) return NextResponse.json(null, { status: 404 });
 
     const r = rows[0];
     const out = {
