@@ -106,7 +106,7 @@ export default function ReportsPage() {
 
       <footer className="pt-6 text-xs text-gray-500">
         <div>API total: {total}</div>
-        <a href="/api/reports" className="underline hover:no-underline">View JSON</a>
+        <Link href="/api/reports" className="underline hover:no-underline">View JSON</Link>
       </footer>
     </main>
   );
