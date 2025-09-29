@@ -9,12 +9,13 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// ✅ Correct App Router signature: (req, { params: { id } })
+// Note: in this project, Next's types expect params to be a Promise<{ id: string }>
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const idNum = Number(params.id);
+  const { id } = await params;
+  const idNum = Number(id);
   if (!Number.isInteger(idNum) || idNum <= 0) {
     return NextResponse.json({ ok: false, error: "bad id" }, { status: 400 });
   }
