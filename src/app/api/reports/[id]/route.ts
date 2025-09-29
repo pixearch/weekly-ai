@@ -9,12 +9,12 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Correct, explicit signature for an App Router dynamic route:
+// ✅ Correct App Router signature: (req, { params: { id } })
 export async function GET(
   _req: NextRequest,
-  ctx: { params: { id: string } }
+  { params }: { params: { id: string } }
 ): Promise<NextResponse> {
-  const idNum = Number(ctx.params.id);
+  const idNum = Number(params.id);
   if (!Number.isInteger(idNum) || idNum <= 0) {
     return NextResponse.json({ ok: false, error: "bad id" }, { status: 400 });
   }
