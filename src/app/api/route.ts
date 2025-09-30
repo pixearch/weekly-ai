@@ -38,5 +38,8 @@ export async function GET(req: Request) {
     },
   ];
 
-  return NextResponse.json({ endpoints });
+  // Pretty-print JSON
+  return new Response(JSON.stringify({ endpoints }, null, 2), {
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
