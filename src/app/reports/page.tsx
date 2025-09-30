@@ -68,10 +68,29 @@ export default function ReportsPage() {
         <Link href="/" className="text-sm text-gray-400 hover:underline">← Home</Link>
       </nav>
 
-      <h1 className="text-3xl font-bold">Weekly Reports</h1>
+      {/* Header row with New Report button */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Weekly Reports</h1>
+        <Link
+          href="/reports/new"
+          className="px-3 py-2 rounded bg-white text-gray-900 font-medium hover:opacity-90"
+        >
+          New Report
+        </Link>
+      </div>
 
       {items.length === 0 ? (
-        <p className="text-gray-400">No reports yet.</p>
+        <div className="text-gray-400">
+          <p>No reports yet.</p>
+          <div className="mt-3">
+            <Link
+              href="/reports/new"
+              className="inline-block px-3 py-2 rounded border border-gray-700 bg-gray-800 hover:bg-gray-700"
+            >
+              Create the first report
+            </Link>
+          </div>
+        </div>
       ) : (
         <>
           <ul className="space-y-4">
