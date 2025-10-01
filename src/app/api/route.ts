@@ -22,7 +22,12 @@ export async function GET(req: Request) {
     // Reviews
     { method: 'POST', path: '/api/reviews', description: 'Create a single review.', example: `curl -X POST "${origin}/api/reviews" -H "content-type: application/json" -d '{"source_id":"UUID","ext_id":"A1","author":"alice","title":"ok","body":"text","rating":4.5,"created_at":"2025-09-30T00:00:00Z","url":"https://example.com/r/1","lang":"en","product":"SKU-123","tags":{"channel":"test"}}'` },
     { method: 'POST', path: '/api/reviews/bulk', description: 'NDJSON bulk ingest (one JSON object per line).', example: `printf '%s\\n' '{"source_id":"UUID","ext_id":"bulk-001","author":"bob","body":"nice","rating":5,"created_at":"2025-09-30T00:00:00Z","product":"SKU-123"}' '{"source_id":"UUID","ext_id":"bulk-002","author":"carol","body":"meh","rating":2.5,"created_at":"2025-09-30T00:00:00Z","product":"SKU-123"}' | curl -X POST "${origin}/api/reviews/bulk" -H "content-type: application/x-ndjson" --data-binary @-` },
-    { method: 'GET', path: '/api/reviews', description: 'List reviews. Filters: product, source_id, rating_gte, rating_lte, since. Supports limit, offset, pretty.', example: `curl "${origin}/api/reviews?product=SKU-123&source_id=UUID&rating_gte=4&rating_lte=5&since=2025-09-30T00:00:00Z&limit=10"` },
+    {
+      method: 'GET',
+      path: '/api/reviews',
+      description: 'List reviews. Filters: product, source_id, rating_gte, rating_lte, since, q. Paging: limit, offset. Sorting: sort=created_at|rating & order=asc|desc. Pretty by default; ?pretty=false for compact.',
+      example: `curl "${origin}/api/reviews?product=SKU-123&source_id=UUID&rating_gte=4&rating_lte=5&since=2025-09-30T00:00:00Z&q=prod&sort=rating&order=asc&limit=10"`
+    },
     { method: 'GET', path: '/api/reviews/[id]', description: 'Fetch a single review by id.', example: `curl "${origin}/api/reviews/REPLACE_ID"` },
     { method: 'DELETE', path: '/api/reviews/[id]', description: 'Delete a review by id.', example: `curl -X DELETE "${origin}/api/reviews/REPLACE_ID"` }
   ];
