@@ -1,18 +1,25 @@
 import { Pool } from 'pg';
 
-const connectionString = process.env.DATABASE_URL;
-// Reuse a single Pool across hot-reloads in dev
+// Prefer Vercel Postgres managed URLs, fall back to DATABASE_URL
+const connectionString =
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.POSTGRES_URL ||
+  process.env.DATABASE_URL ||
+  '';
+
+const needsSSL =
+  process.env.PGSSL === 'require' ||
+  (connectionString.includes('sslmode=require'));
+
 const globalForPg = globalThis as unknown as { pgPool?: Pool };
 
 export const pg =
   globalForPg.pgPool ??
   new Pool({
     connectionString,
-    // Local dev usually no SSL; managed hosts may require it. We'll override per env later.
-    ssl: process.env.PGSSL === 'require' ? { rejectUnauthorized: false } : undefined,
+    ssl: needsSSL ? { rejectUnauthorized: false } : undefined,
   });
 
 if (!globalForPg.pgPool) globalForPg.pgPool = pg;
 
-// Convenience helper
 export const query = (text: string, params?: any[]) => pg.query(text, params);
