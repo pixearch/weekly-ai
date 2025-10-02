@@ -1,140 +1,54 @@
-import { NextRequest } from 'next/server';
-import { query } from '../../../lib/db';
+import { NextRequest, NextResponse } from "next/server";
+import { sql } from "@vercel/postgres";
 
-type ReviewInput = {
-  source_id: string;
-  ext_id: string;
-  author?: string | null;
-  title?: string | null;
-  body?: string | null;
-  rating?: number | null;
-  created_at: string;       // ISO timestamp
-  url?: string | null;
-  lang?: string | null;
-  product?: string | null;
-  tags?: Record<string, any> | null;
-};
-
-function json(body: unknown, pretty = true) {
-  const s = pretty ? JSON.stringify(body, null, 2) : JSON.stringify(body);
-  return new Response(s + '\n', { headers: { 'Content-Type': 'application/json' } });
-}
-
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const data = (await req.json()) as Partial<ReviewInput>;
+    const { searchParams } = new URL(req.url);
+    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "10", 10)));
+    const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10));
+    const pretty = searchParams.get("pretty") === "1";
+    const newline = searchParams.get("newline") === "1";
+    const since = searchParams.get("since");
+    const q = searchParams.get("q");
+    const qLike = q ? ("%" + q + "%") : null;
+    const source = searchParams.get("source");
+    const video = searchParams.get("video");
+    const post = searchParams.get("post");
+    const postLike = post ? ("%comments/" + post + "%") : null;
+    const videoLike = video ? ("%" + video + "%") : null;
 
-    if (!data.source_id || !data.ext_id || !data.created_at) {
-      return json({ ok: false, error: "Required: source_id, ext_id, created_at (ISO string)" });
-    }
-
-    const createdAtIso = new Date(data.created_at).toISOString();
-
-    const result = await query(
-      `
-      INSERT INTO reviews
-        (source_id, ext_id, author, title, body, rating, created_at, harvested_at, url, lang, product, tags)
-      VALUES
-        ($1,        $2,     $3,     $4,   $5,   $6,     $7,        DEFAULT,      $8,  $9,   $10,     $11)
-      RETURNING id
-      `,
-      [
-        data.source_id,
-        data.ext_id,
-        data.author ?? null,
-        data.title ?? null,
-        data.body ?? null,
-        data.rating ?? null,
-        createdAtIso,
-        data.url ?? null,
-        data.lang ?? null,
-        data.product ?? null,
-        data.tags ? JSON.stringify(data.tags) : null,
-      ]
-    );
-
-    return json({ ok: true, id: result.rows[0].id });
-  } catch (err: any) {
-    return json({
-      ok: false,
-      error: err?.message || 'Server error',
-      code: err?.code,
-      detail: err?.detail
-    });
-  }
-}
-
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const pretty = url.searchParams.get('pretty') !== 'false';
-
-  const limit = Math.max(1, Math.min(100, Number(url.searchParams.get('limit') ?? '20')));
-  const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0'));
-
-  // filters
-  const product    = url.searchParams.get('product')    || null;
-  const source_id  = url.searchParams.get('source_id')  || null;
-  const rating_gte = url.searchParams.get('rating_gte');
-  const rating_lte = url.searchParams.get('rating_lte');
-  const sinceRaw   = url.searchParams.get('since'); // ISO timestamp
-
-  let sinceIso: string | null = null;
-  if (sinceRaw) {
-    const d = new Date(sinceRaw);
-    if (!isNaN(d.getTime())) sinceIso = d.toISOString();
-  }
-
-  try {
-    const params: any[] = [];
-    const where: string[] = [];
-
-    if (product) {
-      params.push(product);
-      where.push(`r.product = $${params.length}`);
-    }
-    if (source_id) {
-      params.push(source_id);
-      where.push(`r.source_id = $${params.length}::uuid`);
-    }
-    if (rating_gte !== null && rating_gte !== undefined) {
-      params.push(Number(rating_gte));
-      where.push(`r.rating >= $${params.length}::numeric`);
-    }
-    if (rating_lte !== null && rating_lte !== undefined) {
-      params.push(Number(rating_lte));
-      where.push(`r.rating <= $${params.length}::numeric`);
-    }
-    if (sinceIso) {
-      params.push(sinceIso);
-      where.push(`r.created_at >= $${params.length}::timestamptz`);
-    }
-
-    params.push(limit);
-    const limitParam = `$${params.length}`;
-    params.push(offset);
-    const offsetParam = `$${params.length}`;
-
-    const sql = `
-      SELECT
-        r.id, r.source_id, r.ext_id, r.author, r.title, r.body,
-        r.rating::float AS rating,
-        r.created_at, r.harvested_at, r.url, r.lang, r.product, r.tags
-      FROM reviews r
-      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-      ORDER BY r.created_at DESC
-      LIMIT ${limitParam} OFFSET ${offsetParam}
+    const rows = await sql<{
+      id: string;
+      source_id: string;
+      ext_id: string;
+      author: string | null;
+      title: string | null;
+      body: string | null;
+      rating: number | null;
+      created_at: string | null;
+      harvested_at: string;
+      url: string | null;
+      lang: string | null;
+      product: string | null;
+      tags: any;
+    }>`
+      SELECT id, source_id, ext_id, author, title, body, rating, created_at, harvested_at, url, lang, product, tags
+      FROM reviews
+      WHERE (${source}::text IS NULL OR (SELECT kind FROM review_sources s WHERE s.id = reviews.source_id) = ${source})
+      AND (${video}::text IS NULL OR (SELECT url FROM review_sources s WHERE s.id = reviews.source_id) LIKE ${videoLike})
+      AND (${post}::text IS NULL OR (SELECT url FROM review_sources s WHERE s.id = reviews.source_id) ILIKE ${postLike})
+      AND (${since}::text IS NULL OR reviews.created_at >= (now() - (regexp_replace(${since}, '[^0-9]+', ' ', 'g')::text || ' hours')::interval))
+      AND (${q}::text IS NULL OR (reviews.body ILIKE ${qLike} OR reviews.author ILIKE ${qLike}))
+      ORDER BY created_at DESC NULLS LAST, harvested_at DESC
+      LIMIT ${limit} OFFSET ${offset};
     `;
 
-    const { rows } = await query(sql, params);
+    const payload = { ok: true, count: rows.rowCount, items: rows.rows };
+    const body = pretty ? JSON.stringify(payload, null, 2) : JSON.stringify(payload);
+    const text = newline ? body + "\n" : body;
 
-    const body = pretty
-      ? JSON.stringify({ items: rows, limit, offset, product, source_id, rating_gte: rating_gte ?? null, rating_lte: rating_lte ?? null, since: sinceIso }, null, 2)
-      : JSON.stringify({ items: rows, limit, offset, product, source_id, rating_gte: rating_gte ?? null, rating_lte: rating_lte ?? null, since: sinceIso });
-    return new Response(body + '\n', { headers: { 'Content-Type': 'application/json' } });
-  } catch (err: any) {
-    const body = pretty
-      ? JSON.stringify({ ok: false, error: err?.message || 'Server error' }, null, 2)
-      : JSON.stringify({ ok: false, error: err?.message || 'Server error' });
-    return new Response(body + '\n', { headers: { 'Content-Type': 'application/json' }, status: 500 });
+    return new Response(text, { headers: { "content-type": "application/json" } });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message || "Unknown error" }, { status: 500 });
   }
 }

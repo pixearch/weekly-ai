@@ -6,8 +6,8 @@ function json(body: unknown, status = 200, pretty = true) {
   return new Response(s + '\n', { status, headers: { 'Content-Type': 'application/json' } });
 }
 
-export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
-  const id = ctx.params.id;
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const { rows } = await query(
       `SELECT id, source_id, ext_id, author, title, body,
@@ -24,8 +24,8 @@ export async function GET(_req: NextRequest, ctx: { params: { id: string } }) {
   }
 }
 
-export async function DELETE(_req: NextRequest, ctx: { params: { id: string } }) {
-  const id = ctx.params.id;
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const { rowCount } = await query(`DELETE FROM reviews WHERE id = $1::uuid`, [id]);
     if (rowCount === 0) return json({ ok: false, error: 'Not found' }, 404);

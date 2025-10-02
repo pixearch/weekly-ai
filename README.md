@@ -34,3 +34,18 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+---
+
+## 🧭 Team Quick Links
+- **Build FAQ:** _Project file: “Pullview – Build FAQ.docx”_  
+- **Roadmap (latest):** _“AI Reviewer Logical Roadmap – updated 1OCT 2025.docx”_  
+- **Roadmap (original):** _“AI Reviewer Logical Roadmap.docx”_
+
+**Prod checks**
+- Latest reviews (Rickroll demo):  
+  https://weekly-ai.vercel.app/api/reviews?source=youtube&video=dQw4w9WgXcQ&limit=5&pretty=1
+- Trigger pull (token required):  
+  https://weekly-ai.vercel.app/api/jobs/pull/run?limit=1&pages=1&dry=1&token=…  
+
+> Keep the FAQ doc open during meetings—answers map to Phases 2–7 and the live endpoints above.

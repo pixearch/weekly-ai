@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/jobs/pull/run?limit=3&pages=2&dry=0&token=37303f093e408985c163846e2e09ffd7bfdabc0c7be0efa8ee16274f82425add",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/jobs/pull/reddit/run?limit=3&fetch=50&dry=0&token=37303f093e408985c163846e2e09ffd7bfdabc0c7be0efa8ee16274f82425add",
+      "schedule": "0 13 * * *"
+    }
+  ]
+}
